@@ -14,8 +14,11 @@ from django.shortcuts import render_to_response
 
 # Create your views here.
 import random
+
 import string
+
 import stripe
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
@@ -37,6 +40,7 @@ class PaymentView(View):
             messages.warning(
                 self.request, "u have not added a billing address")
             return redirect("core:checkout")
+        
 
     def post(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
