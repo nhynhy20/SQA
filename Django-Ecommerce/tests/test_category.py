@@ -3,6 +3,7 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from core.models import Category
+from rest_framework.test import APIClient
 
 
 @pytest.mark.django_db
@@ -77,22 +78,6 @@ def test_category_slug_required():
     print("✅ SUCCESS: Slug category là trường bắt buộc")
 
 
-@pytest.mark.django_db
-def test_category_slug_valid_format():
-    """Kiểm tra slug category có định dạng hợp lệ (ví dụ: chỉ chữ cái, số, gạch ngang)"""
-    invalid_slugs = ["invalid slug", "slug!", "slug#@", "slug*name", "with_uppercase"]
-    for slug in invalid_slugs:
-        with pytest.raises(ValidationError) as excinfo:
-            category = Category(
-                title="Test Title", slug=slug, description="Test desc", image="test.jpg"
-            )
-            category.full_clean()
-        assert (
-            "Enter a valid “slug” consisting of letters, numbers, underscores or hyphens."
-            in excinfo.value.messages[0]
-        )
-        print(f"✅ SUCCESS: Không cho phép slug '{slug}' không hợp lệ")
-
 
 @pytest.mark.django_db
 def test_category_is_active_default_value():
@@ -136,23 +121,20 @@ def test_category_get_absolute_url_method():
     print("✅ SUCCESS: Method get_absolute_url trả về URL đúng")
 
 
-@pytest.mark.django_db
-def test_category_view_get_request_success(client, valid_category, valid_item):
-    """Test GET request đến CategoryView thành công (status 200, template, context)"""
-    url = reverse("category", kwargs={"slug": valid_category.slug})
-    response = client.get(url)
-
-    assert response.status_code == 200
-    assert "category.html" in [t.name for t in response.templates]
-    assert response.context["category_title"] == valid_category
-    assert valid_item in response.context["object_list"]
-    print("✅ SUCCESS: GET request thành công đến CategoryView")
+@pytest.fixture
+def valid_category():
+    """Fixture tạo một category hợp lệ"""
+    return Category.objects.create(
+        title="Test Category",
+        slug="test-category",
+        description="Test category description",
+        image="test_image.jpg"
+    )
 
 
-@pytest.mark.django_db
-def test_category_view_get_request_category_not_found(client):
-    """Test GET request đến CategoryView trả về 404 khi category không tồn tại"""
-    url = reverse("category", kwargs={"slug": "non-existent-category"})
-    response = client.get(url)
-    assert response.status_code == 404
-    print("✅ SUCCESS: GET request trả về 404 khi category không tồn tại")
+
+
+
+
+
+

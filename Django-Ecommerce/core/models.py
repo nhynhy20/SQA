@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import Sum
 from django.shortcuts import reverse
 from django_countries.fields import CountryField
+from django.core.validators import RegexValidator
 
 # Create your models here.
 CATEGORY_CHOICES = (
@@ -36,18 +37,32 @@ class Slide(models.Model):
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
-    slug = models.SlugField()
+    slug = models.SlugField(
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-z0-9\-_]+$",  # Chỉ chấp nhận chữ cái thường, số, gạch ngang và dấu gạch dưới
+                message="Slug chỉ được chứa chữ cái thường, số, gạch ngang và dấu gạch dưới.",
+            )
+        ],
+    )
     description = models.TextField()
     image = models.ImageField()
     is_active = models.BooleanField(default=True)
+
+    slug_validator = RegexValidator(
+        regex=r"^[a-z0-9\-_]+$",
+        message="Slug chỉ được chứa chữ cái thường, số, gạch ngang và dấu gạch dưới."
+    )
+
+    def clean(self):
+        self.slug_validator(self.slug)
 
     def __str__(self):
         return self.title
 
     def get_absolute_url(self):
-        return reverse("core:category", kwargs={
-            'slug': self.slug
-        })
+        return reverse("core:category", kwargs={"slug": self.slug})
 
 
 class Item(models.Model):
