@@ -331,22 +331,55 @@ def get_coupon(request, code):
         return redirect("core:checkout")
 
 
+# class AddCouponView(View):
+#     def post(self, *args, **kwargs):
+#         form = CouponForm(self.request.POST or None)
+#         if form.is_valid():
+#             try:
+#                 code = form.cleaned_data.get('code')
+#                 order = Order.objects.get(
+#                     user=self.request.user, ordered=False)
+#                 order.coupon = get_coupon(self.request, code)
+#                 order.save()
+#                 messages.success(self.request, "Successfully added coupon")
+#                 return redirect("core:checkout")
+
+#             except ObjectDoesNotExist:
+#                 messages.info(request, "You do not have an active order")
+#                 return redirect("core:checkout")
+
+
 class AddCouponView(View):
     def post(self, *args, **kwargs):
         form = CouponForm(self.request.POST or None)
         if form.is_valid():
             try:
+                order = Order.objects.get(user=self.request.user, ordered=False)
+                
+                # ✅ Kiểm tra nếu đơn hàng đã hoàn thành
+                if order.ordered:
+                    messages.info(self.request, "You cannot add a coupon to a completed order")
+                    return redirect("core:checkout")
+
                 code = form.cleaned_data.get('code')
-                order = Order.objects.get(
-                    user=self.request.user, ordered=False)
-                order.coupon = get_coupon(self.request, code)
+                coupon = get_coupon(self.request, code)
+
+                if coupon is None:  
+                    messages.info(self.request, "Invalid coupon code")
+                    return redirect("core:checkout")
+
+                order.coupon = coupon
                 order.save()
                 messages.success(self.request, "Successfully added coupon")
                 return redirect("core:checkout")
 
             except ObjectDoesNotExist:
-                messages.info(request, "You do not have an active order")
+                messages.info(self.request, "You do not have an active order")
                 return redirect("core:checkout")
+
+
+
+
 
 
 class RequestRefundView(View):
